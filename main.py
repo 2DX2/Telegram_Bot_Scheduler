@@ -61,6 +61,15 @@ async def start(update, context):
 """)
     await create_main_menu(update, context)
 
+async def main_menu(update, context):
+    create_user_data_file(update)
+    await update.callback_query.edit_message_text("""
+🏁 Главное меню
+
+Что хотите сделать?
+""", reply_markup=markups["main_menu"])
+
+
 async def add_task(update, context):
     global new_task
     new_task = {"name": None, "description": None, "date": None}
@@ -83,7 +92,7 @@ async def description_add_task(update, context):
     global new_task
     new_task["description"] = update.message.text
     await update.message.reply_text("""
-Введите дату и время дедлайна (ДД-ММ-ГГГГ ЧЧ:ММ):
+⏰ Введите дату и время дедлайна (ДД-ММ-ГГГГ ЧЧ:ММ):
 """, reply_markup=markups["add_task"])
     return "date_add_task"
 
@@ -91,11 +100,9 @@ async def skip_description_add_task(update, context):
     global new_task
     new_task["description"] = None
     await context.bot.send_message(chat_id=update.effective_chat.id, text="""
-Введите дату и время дедлайна (ДД-ММ-ГГГГ ЧЧ:ММ):
+⏰ Введите дату и время дедлайна (ДД-ММ-ГГГГ ЧЧ:ММ):
 """, reply_markup=markups["add_task"])
     return "date_add_task"
-
-
 
 async def date_add_task(update, context):
     try:
@@ -120,18 +127,18 @@ async def date_add_task(update, context):
             await update.message.reply_text(f"""
 ✅ <b>Задача добавлена!</b>
 
-<b>Название:</b> {new_task["name"]}
-<b>Описания нет</b>
-<b>Дедлайн:</b> {new_task["date"]}
+🏷️ <b>Название:</b> {new_task["name"]}
+📝 <b>Описания нет</b>
+⏰ <b>Дедлайн:</b> {new_task["date"]}
 """, parse_mode=ParseMode.HTML)
         else:
             await update.message.reply_text(f"""
 ✅ <b>Задача добавлена!</b>
 
-<b>Название:</b> {new_task["name"]}
-<b>Описание:</b>
+🏷️ <b>Название:</b> {new_task["name"]}
+📝 <b>Описание:</b>
 {new_task["description"]}
-<b>Дедлайн:</b> {new_task["date"]}
+⏰ <b>Дедлайн:</b> {new_task["date"]}
 """, parse_mode=ParseMode.HTML)
 
         await create_main_menu(update, context)
@@ -144,7 +151,7 @@ async def date_add_task(update, context):
 Пример: 01-01-2000 12:00
 """)
         await update.message.reply_text("""
-Введите дату и время дедлайна (ДД-ММ-ГГГГ ЧЧ:ММ):
+⏰ Введите дату и время дедлайна (ДД-ММ-ГГГГ ЧЧ:ММ):
 """, reply_markup=markups["add_task"])
 
 async def cancel_add_task(update, context):
@@ -154,13 +161,6 @@ async def cancel_add_task(update, context):
     await create_main_menu(update, context)
     return ConversationHandler.END
 
-async def main_menu(update, context):
-    create_user_data_file(update)
-    await update.callback_query.edit_message_text("""
-🏁 Главное меню
-
-Что хотите сделать?
-""", reply_markup=markups["main_menu"])
 
 async def my_tasks(update, context):
     await update.callback_query.edit_message_text("""
@@ -211,6 +211,8 @@ application.add_handler(CommandHandler('start', start))
 application.add_handler(CommandHandler('help', help))
 
 application.add_handler(conv_add_task_handler)
+
+application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, create_main_menu))
 
 application.add_handler(CallbackQueryHandler(my_tasks, pattern="my_tasks"))
 application.add_handler(CallbackQueryHandler(main_menu, pattern="main_menu"))
