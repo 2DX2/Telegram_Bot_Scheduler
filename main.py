@@ -20,8 +20,8 @@ markups = {
     ]),
     "my_tasks": InlineKeyboardMarkup([
         [InlineKeyboardButton("✅ Активные", callback_data="active")],
-        [InlineKeyboardButton("✔️ Выполненные", callback_data="complete")],
         [InlineKeyboardButton("⏰ Просроченные", callback_data="overdue")],
+        [InlineKeyboardButton("✔️ Выполненные", callback_data="complete")],
         [InlineKeyboardButton("🔙 Назад", callback_data="beck_main_menu_my_tasks")]
     ]),
     "add_task": InlineKeyboardMarkup([
@@ -43,10 +43,10 @@ markups = {
 
 def create_user_data_file(update):
     try:
-        file = open(f"users_data/{update.effective_user.id}.json", "r")
+        file = open(f"users_data/tasks/{update.effective_user.id}_tasks.json", "r")
         file.close()
     except FileNotFoundError:
-        file = open(f"users_data/{update.effective_user.id}.json", "w+")
+        file = open(f"users_data/tasks/{update.effective_user.id}_tasks.json", "w+")
         json.dump([], file, indent=4, ensure_ascii=False)
         file.close()
 
@@ -58,13 +58,13 @@ def str_to_date(string):
 
 def update_status_user_data_file(id_user):
     all_tasks = []
-    file = open(f"users_data/{id_user}.json", "r")
+    file = open(f"users_data/tasks/{id_user}_tasks.json", "r")
     for task in json.load(file):
         if str_to_date(task["date"]) <= datetime.now() and task["status"] == "active":
             task["status"] = "overdue"
         all_tasks.append(task)
     file.close()
-    file = open(f"users_data/{id_user}.json", "w+")
+    file = open(f"users_data/tasks/{id_user}_tasks.json", "w+")
     json.dump(all_tasks, file, indent=4, ensure_ascii=False)
     file.close()
     return all_tasks
@@ -130,7 +130,8 @@ async def add_task(update, context):
     await update.callback_query.edit_message_text("""
 ➕ Добавление новой задачи
 
-Пожалуйста, введите название задачи (до 100 символов):
+Шаг 1/3:
+Пожалуйста, введите название задачи:
 """, reply_markup=markups["add_task"])
     return "name_add_task"
 
@@ -138,6 +139,7 @@ async def name_add_task(update, context):
     global new_task
     new_task["name"] = update.message.text
     await update.message.reply_text("""
+Шаг 2/3:
 📝 Введите описание задачи:
 """, reply_markup=markups["add_task_name"])
     return "description_add_task"
@@ -146,6 +148,7 @@ async def description_add_task(update, context):
     global new_task
     new_task["description"] = update.message.text
     await update.message.reply_text("""
+Шаг 3/3:
 ⏰ Введите дату и время дедлайна (ДД-ММ-ГГГГ ЧЧ:ММ):
 """, reply_markup=markups["add_task"])
     return "date_add_task"
@@ -154,6 +157,7 @@ async def skip_description_add_task(update, context):
     global new_task
     new_task["description"] = None
     await context.bot.send_message(chat_id=update.effective_chat.id, text="""
+Шаг 3/3:
 ⏰ Введите дату и время дедлайна (ДД-ММ-ГГГГ ЧЧ:ММ):
 """, reply_markup=markups["add_task"])
     return "date_add_task"
@@ -169,7 +173,7 @@ async def date_add_task(update, context):
         else:
             new_task["status"] = "active"
         
-        file = open(f"users_data/{update.effective_user.id}.json", "r", encoding="utf-8")
+        file = open(f"users_data/tasks/{update.effective_user.id}_tasks.json", "r", encoding="utf-8")
         all_tasks = json.load(file)
         file.close()
 
@@ -181,7 +185,7 @@ async def date_add_task(update, context):
                 print(i)
                 break
 
-        file = open(f"users_data/{update.effective_user.id}.json", "w+", encoding="utf-8")
+        file = open(f"users_data/tasks/{update.effective_user.id}_tasks.json", "w+", encoding="utf-8")
         json.dump(all_tasks + [new_task], file, indent=4, ensure_ascii=False)
         file.close()
 
@@ -233,12 +237,11 @@ async def my_tasks(update, context):
 """, reply_markup=markups["my_tasks"])
     return "choice_type_my_tasks"
 
-
-async def active_my_tasks(update, context):
+async def choice_type_my_tasks(update, context):
     keyboards = []
 
     update_status_user_data_file(update.effective_user.id)
-    file = open(f"users_data/{update.effective_user.id}.json", "r", encoding="utf-8")
+    file = open(f"users_data/tasks/{update.effective_user.id}_tasks.json", "r", encoding="utf-8")
 
     query = update.callback_query
     await query.answer()
@@ -270,8 +273,6 @@ async def active_my_tasks(update, context):
 
     return "choice_task_my_tasks"
 
-
-
 async def choice_task_my_tasks(update, context):
     query = update.callback_query
     await query.answer()
@@ -280,7 +281,7 @@ async def choice_task_my_tasks(update, context):
         await main_menu(update, context)
         return ConversationHandler.END
     elif query.data.split("|", 1)[0] == "delete_task":
-        file = open(f"users_data/{update.effective_user.id}.json", "r", encoding="utf-8")
+        file = open(f"users_data/tasks/{update.effective_user.id}_tasks.json", "r", encoding="utf-8")
         tasks = json.load(file)
         file.close()
         for i in range(len(tasks)):
@@ -291,7 +292,7 @@ async def choice_task_my_tasks(update, context):
 
         del tasks[number_task]
 
-        file = open(f"users_data/{update.effective_user.id}.json", "w", encoding="utf-8")
+        file = open(f"users_data/tasks/{update.effective_user.id}_tasks.json", "w", encoding="utf-8")
         json.dump(tasks, file, indent=4, ensure_ascii=False)
         file.close()
 
@@ -315,7 +316,7 @@ async def choice_task_my_tasks(update, context):
 
 
     elif query.data.split("|", 1)[0] == "complete_task":
-        file = open(f"users_data/{update.effective_user.id}.json", "r", encoding="utf-8")
+        file = open(f"users_data/tasks/{update.effective_user.id}_tasks.json", "r", encoding="utf-8")
         tasks = json.load(file)
         file.close()
         for i in range(len(tasks)):
@@ -326,7 +327,7 @@ async def choice_task_my_tasks(update, context):
 
         tasks[number_task]["status"] = "complete"
 
-        file = open(f"users_data/{update.effective_user.id}.json", "w", encoding="utf-8")
+        file = open(f"users_data/tasks/{update.effective_user.id}_tasks.json", "w", encoding="utf-8")
         json.dump(tasks, file, indent=4, ensure_ascii=False)
         file.close()
 
@@ -349,7 +350,7 @@ async def choice_task_my_tasks(update, context):
 """, parse_mode=ParseMode.HTML, reply_markup=markups["back_main_menu_my_tasks"])
 
     else:
-        file = open(f"users_data/{update.effective_user.id}.json", "r", encoding="utf-8")
+        file = open(f"users_data/tasks/{update.effective_user.id}_tasks.json", "r", encoding="utf-8")
         tasks = json.load(file)
         file.close()
         for i in tasks:
@@ -395,9 +396,6 @@ async def choice_task_my_tasks(update, context):
 ⏰ <b>Дедлайн:</b> {task["date"]}
 """, parse_mode=ParseMode.HTML, reply_markup=markup)
 
-
-
-
 async def beck_main_menu_my_tasks(update, context):
     await main_menu(update, context)
     return ConversationHandler.END
@@ -420,7 +418,7 @@ conv_add_task_handler = ConversationHandler(
 
 conv_my_tasks_handler = ConversationHandler(
     entry_points=[CallbackQueryHandler(my_tasks, pattern="my_tasks")],
-    states={"choice_type_my_tasks": [CallbackQueryHandler(beck_main_menu_my_tasks, pattern="beck_main_menu_my_tasks"), CallbackQueryHandler(active_my_tasks)],
+    states={"choice_type_my_tasks": [CallbackQueryHandler(beck_main_menu_my_tasks, pattern="beck_main_menu_my_tasks"), CallbackQueryHandler(choice_type_my_tasks)],
             "choice_task_my_tasks": [CallbackQueryHandler(choice_task_my_tasks)]
             },
     fallbacks=[CallbackQueryHandler(beck_main_menu_my_tasks, pattern="beck_main_menu_my_tasks")]
