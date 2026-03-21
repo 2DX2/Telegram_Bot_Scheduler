@@ -10,7 +10,7 @@ filterwarnings(action="ignore", message=r".*CallbackQueryHandler") # убира�
 
 BOT_TOKEN = "8682452278:AAHi7CQC86R06CL3ZtqUVVF2sXfVtil5sEg"
 
-new_task = {"name": None, "description": None, "date": None, "status": ""}
+# new_task = {"id": None, "name": None, "description": None, "date": None, "status": ""}
 
 markups = {
     "main_menu": InlineKeyboardMarkup([
@@ -19,10 +19,10 @@ markups = {
         [InlineKeyboardButton("⚙️ Настройки", callback_data="settings")]
     ]),
     "my_tasks": InlineKeyboardMarkup([
-        [InlineKeyboardButton("✅ Активные", callback_data="active_my_tasks")],
-        [InlineKeyboardButton("✔️ Выполненные", callback_data="completed_my_tasks")],
-        [InlineKeyboardButton("⏰ Просроченные", callback_data="overdue_my_tasks")],
-        [InlineKeyboardButton("🔙 Назад", callback_data="main_menu")]
+        [InlineKeyboardButton("✅ Активные", callback_data="active")],
+        [InlineKeyboardButton("✔️ Выполненные", callback_data="complete")],
+        [InlineKeyboardButton("⏰ Просроченные", callback_data="overdue")],
+        [InlineKeyboardButton("🔙 Назад", callback_data="beck_main_menu_my_tasks")]
     ]),
     "add_task": InlineKeyboardMarkup([
         [InlineKeyboardButton("Отмена", callback_data="cancel_add_task")]
@@ -30,7 +30,15 @@ markups = {
     "add_task_name": InlineKeyboardMarkup([
         [InlineKeyboardButton("⏩ Пропустить", callback_data="skip_description_add_task")],
         [InlineKeyboardButton("Отмена", callback_data="cancel_add_task")]
-    ])
+    ]),
+    "task_info": InlineKeyboardMarkup([
+        [InlineKeyboardButton("✔️ Отметить выполненной", callback_data="delete_task")],
+        [InlineKeyboardButton("❌ Удалить задачу", callback_data="delete_task")],
+        [InlineKeyboardButton("🔙 Назад", callback_data="beck_main_menu_my_tasks")]
+    ]),
+    "back_main_menu_my_tasks": InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔙 Назад", callback_data="beck_main_menu_my_tasks")]
+    ]),
 }
 
 def create_user_data_file(update):
@@ -52,8 +60,8 @@ def update_status_user_data_file(id_user):
     all_tasks = []
     file = open(f"users_data/{id_user}.json", "r")
     for task in json.load(file):
-        if str_to_date(task["date"]) <= datetime.now():
-            task["status"] = "Overdue"
+        if str_to_date(task["date"]) <= datetime.now() and task["status"] == "active":
+            task["status"] = "overdue"
         all_tasks.append(task)
     file.close()
     file = open(f"users_data/{id_user}.json", "w+")
@@ -77,6 +85,8 @@ async def main_menu(update, context):
 
 Что хотите сделать?
 """, reply_markup=markups["main_menu"])
+
+    # return ConversationHandler.END
 
 
 async def start(update, context):
@@ -116,7 +126,7 @@ async def help(update, context):
 
 async def add_task(update, context):
     global new_task
-    new_task = {"name": None, "description": None, "date": None, "status": ""}
+    new_task = {"id": None, "name": None, "description": None, "date": None, "status": None}
     await update.callback_query.edit_message_text("""
 ➕ Добавление новой задачи
 
@@ -163,6 +173,14 @@ async def date_add_task(update, context):
         all_tasks = json.load(file)
         file.close()
 
+        all_ids = [i["id"] for i in all_tasks]
+
+        for i in range((max(all_ids) if all_ids != [] else 0) + 2):
+            if i not in all_ids:
+                new_task["id"] = i
+                print(i)
+                break
+
         file = open(f"users_data/{update.effective_user.id}.json", "w+", encoding="utf-8")
         json.dump(all_tasks + [new_task], file, indent=4, ensure_ascii=False)
         file.close()
@@ -189,10 +207,10 @@ async def date_add_task(update, context):
         return ConversationHandler.END
 
     except:
-        await update.message.reply_text("""
+        await update.message.reply_text(f"""
 ❌ Неверный ввод
 Верный формат: ДД-ММ-ГГГГ ЧЧ:ММ
-Пример: 01-01-2000 12:00
+Пример: {date_to_str(datetime.now())}
 """)
         await update.message.reply_text("""
 ⏰ Введите дату и время дедлайна (ДД-ММ-ГГГГ ЧЧ:ММ):
@@ -207,28 +225,184 @@ async def cancel_add_task(update, context):
 
 
 async def my_tasks(update, context):
+    create_user_data_file(update)
     await update.callback_query.edit_message_text("""
 📋 Мои задачи
 
 Выберите тип задач для просмотра:
 """, reply_markup=markups["my_tasks"])
+    return "choice_type_my_tasks"
 
-'''
+
 async def active_my_tasks(update, context):
     keyboards = []
 
     update_status_user_data_file(update.effective_user.id)
-    
     file = open(f"users_data/{update.effective_user.id}.json", "r", encoding="utf-8")
 
-    for keyboard in json.load(file):
-        if keyboard["status"] == "active":
-            keyboards.append(keyboard)
+    query = update.callback_query
+    await query.answer()
 
-    await update.callback_query.edit_message_text("""
-""", reply_markup=)
+    for task in json.load(file):
+        if task["status"] == query.data:
+            keyboards.append([InlineKeyboardButton(task["name"], callback_data=task["id"])]) # !!!!!!!!!!!!!!!!!
 
-'''
+    keyboards.append([InlineKeyboardButton("🔙 Назад", callback_data="beck_main_menu_my_tasks")])
+
+    markup = InlineKeyboardMarkup(keyboards)
+
+    if query.data == "active":
+        word = "✅ Ваши активные"
+    elif query.data == "complete":
+        word = "✔️ Ваши выполненные"
+    elif query.data == "overdue":
+        word = "⏰ Ваши просроченные"
+
+
+    if len(keyboards) == 1:
+        await update.callback_query.edit_message_text(f"""
+🔎 У вас нет задач этого вида
+""", reply_markup=markup)
+    else:
+        await update.callback_query.edit_message_text(f"""
+{word} задачи:
+""", reply_markup=markup)
+
+    return "choice_task_my_tasks"
+
+
+
+async def choice_task_my_tasks(update, context):
+    query = update.callback_query
+    await query.answer()
+
+    if query.data == "beck_main_menu_my_tasks":
+        await main_menu(update, context)
+        return ConversationHandler.END
+    elif query.data.split("|", 1)[0] == "delete_task":
+        file = open(f"users_data/{update.effective_user.id}.json", "r", encoding="utf-8")
+        tasks = json.load(file)
+        file.close()
+        for i in range(len(tasks)):
+            if tasks[i]["id"] == int(query.data.split("|", 1)[1]):
+                task = tasks[i]
+                number_task = i
+                break
+
+        del tasks[number_task]
+
+        file = open(f"users_data/{update.effective_user.id}.json", "w", encoding="utf-8")
+        json.dump(tasks, file, indent=4, ensure_ascii=False)
+        file.close()
+
+        if task["description"] is None:
+            await update.callback_query.edit_message_text(f"""
+<b>❌ Задача удалена!</b>
+
+🏷️ <b>Название:</b> {task["name"]}
+📝 <b>Описания нет</b>
+⏰ <b>Дедлайн:</b> {task["date"]}
+""", parse_mode=ParseMode.HTML, reply_markup=markups["back_main_menu_my_tasks"])
+        else:
+            await update.callback_query.edit_message_text(f"""
+<b>❌ Задача удалена!</b>
+
+🏷️ <b>Название:</b> {task["name"]}
+📝 <b>Описание:</b>
+{task["description"]}
+⏰ <b>Дедлайн:</b> {task["date"]}
+""", parse_mode=ParseMode.HTML, reply_markup=markups["back_main_menu_my_tasks"])
+
+
+    elif query.data.split("|", 1)[0] == "complete_task":
+        file = open(f"users_data/{update.effective_user.id}.json", "r", encoding="utf-8")
+        tasks = json.load(file)
+        file.close()
+        for i in range(len(tasks)):
+            if tasks[i]["id"] == int(query.data.split("|", 1)[1]):
+                task = tasks[i]
+                number_task = i
+                break
+
+        tasks[number_task]["status"] = "complete"
+
+        file = open(f"users_data/{update.effective_user.id}.json", "w", encoding="utf-8")
+        json.dump(tasks, file, indent=4, ensure_ascii=False)
+        file.close()
+
+        if task["description"] is None:
+            await update.callback_query.edit_message_text(f"""
+<b>✔️ Задача выполнена!</b>
+
+🏷️ <b>Название:</b> {task["name"]}
+📝 <b>Описания нет</b>
+⏰ <b>Дедлайн:</b> {task["date"]}
+""", parse_mode=ParseMode.HTML, reply_markup=markups["beck_main_menu_my_tasks"])
+        else:
+            await update.callback_query.edit_message_text(f"""
+<b>✔️ Задача выполнена!</b>
+
+🏷️ <b>Название:</b> {task["name"]}
+📝 <b>Описание:</b>
+{task["description"]}
+⏰ <b>Дедлайн:</b> {task["date"]}
+""", parse_mode=ParseMode.HTML, reply_markup=markups["back_main_menu_my_tasks"])
+
+    else:
+        file = open(f"users_data/{update.effective_user.id}.json", "r", encoding="utf-8")
+        tasks = json.load(file)
+        file.close()
+        for i in tasks:
+            if i["id"] == int(query.data):
+                task = i
+                break
+
+        if task["status"] == "active":
+            word = "✅ Ваша активная задача"
+        elif task["status"] == "complete":
+            word = "✔️ Ваша выполненная задача"
+        elif task["status"] == "overdue":
+            word = "⏰ Ваша просроченная задача"
+
+
+        if task["status"] == "complete":
+            markup = InlineKeyboardMarkup([
+                [InlineKeyboardButton("❌ Удалить задачу", callback_data=f"delete_task|{task['id']}")],
+                [InlineKeyboardButton("🔙 Назад", callback_data="beck_main_menu_my_tasks")]
+            ])
+        else:
+            markup = InlineKeyboardMarkup([
+                [InlineKeyboardButton("✔️ Отметить выполненной", callback_data=f"complete_task|{task['id']}")],
+                [InlineKeyboardButton("❌ Удалить задачу", callback_data=f"delete_task|{task['id']}")],
+                [InlineKeyboardButton("🔙 Назад", callback_data="beck_main_menu_my_tasks")]
+            ])
+
+        if task["description"] is None:
+            await update.callback_query.edit_message_text(f"""
+<b>{word}</b>
+
+🏷️ <b>Название:</b> {task["name"]}
+📝 <b>Описания нет</b>
+⏰ <b>Дедлайн:</b> {task["date"]}
+""", parse_mode=ParseMode.HTML, reply_markup=markup)
+        else:
+            await update.callback_query.edit_message_text(f"""
+<b>{word}</b>
+
+🏷️ <b>Название:</b> {task["name"]}
+📝 <b>Описание:</b>
+{task["description"]}
+⏰ <b>Дедлайн:</b> {task["date"]}
+""", parse_mode=ParseMode.HTML, reply_markup=markup)
+
+
+
+
+async def beck_main_menu_my_tasks(update, context):
+    await main_menu(update, context)
+    return ConversationHandler.END
+
+
 
 conv_add_task_handler = ConversationHandler(
     entry_points=[CallbackQueryHandler(add_task, pattern="add_task")],
@@ -243,16 +417,15 @@ conv_add_task_handler = ConversationHandler(
     fallbacks=[CallbackQueryHandler(cancel_add_task, pattern="cancel_add_task")]
 )
 
-'''
+
 conv_my_tasks_handler = ConversationHandler(
     entry_points=[CallbackQueryHandler(my_tasks, pattern="my_tasks")],
-    states={"active": [CallbackQueryHandler(active_my_tasks, pattern="active_my_tasks")],
-            "completed": [CallbackQueryHandler(completed_my_tasks, pattern="completed_my_tasks")],
-            "overdue": [CallbackQueryHandler(overdue_my_tasks, pattern="overdue_my_tasks")]
+    states={"choice_type_my_tasks": [CallbackQueryHandler(beck_main_menu_my_tasks, pattern="beck_main_menu_my_tasks"), CallbackQueryHandler(active_my_tasks)],
+            "choice_task_my_tasks": [CallbackQueryHandler(choice_task_my_tasks)]
             },
-    fallbacks=[CallbackQueryHandler(main_menu, pattern="main_menu")]
+    fallbacks=[CallbackQueryHandler(beck_main_menu_my_tasks, pattern="beck_main_menu_my_tasks")]
 )
-'''
+
 
 application = Application.builder().token(BOT_TOKEN).build()
 
@@ -260,7 +433,7 @@ application.add_handler(CommandHandler('start', start))
 application.add_handler(CommandHandler('help', help))
 
 application.add_handler(conv_add_task_handler)
-'''application.add_handler(conv_my_tasks_handler)'''
+application.add_handler(conv_my_tasks_handler)
 
 application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, create_main_menu))
 
