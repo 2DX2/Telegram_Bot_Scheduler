@@ -4,13 +4,14 @@ from telegram.ext import *
 import requests
 from datetime import *
 import json
+import os
 from warnings import *
 
 filterwarnings(action="ignore", message=r".*CallbackQueryHandler") # убирает предупреждение, для удобства не удалять!
 
-BOT_TOKEN = "8682452278:AAHi7CQC86R06CL3ZtqUVVF2sXfVtil5sEg"
+os.makedirs("users_data/tasks", exist_ok=True)
 
-# new_task = {"id": None, "name": None, "description": None, "date": None, "status": ""}
+BOT_TOKEN = "8682452278:AAHi7CQC86R06CL3ZtqUVVF2sXfVtil5sEg"
 
 markups = {
     "main_menu": InlineKeyboardMarkup([
@@ -43,12 +44,23 @@ markups = {
 
 def create_user_data_file(update):
     try:
-        file = open(f"users_data/tasks/{update.effective_user.id}_tasks.json", "r")
+        file = open(f"users_data/tasks/{update.effective_user.id}_tasks.json", "r", encoding="utf-8")
         file.close()
     except FileNotFoundError:
-        file = open(f"users_data/tasks/{update.effective_user.id}_tasks.json", "w+")
+        file = open(f"users_data/tasks/{update.effective_user.id}_tasks.json", "w+", encoding="utf-8")
         json.dump([], file, indent=4, ensure_ascii=False)
         file.close()
+
+def task_from_file(user_id, task_id):
+    file = open(f"users_data/tasks/{user_id}_tasks.json", "r", encoding="utf-8")
+    data = json.load(file)
+    file.close()
+    this_task = None
+    for task in data:
+        if task["id"] == int(task_id):
+            this_task = task
+            break
+    return this_task
 
 def date_to_str(date):
     return date.strftime("%d-%m-%Y %H:%M")
@@ -58,13 +70,13 @@ def str_to_date(string):
 
 def update_status_user_data_file(id_user):
     all_tasks = []
-    file = open(f"users_data/tasks/{id_user}_tasks.json", "r")
+    file = open(f"users_data/tasks/{id_user}_tasks.json", "r", encoding="utf-8")
     for task in json.load(file):
         if str_to_date(task["date"]) <= datetime.now() and task["status"] == "active":
             task["status"] = "overdue"
         all_tasks.append(task)
     file.close()
-    file = open(f"users_data/tasks/{id_user}_tasks.json", "w+")
+    file = open(f"users_data/tasks/{id_user}_tasks.json", "w+", encoding="utf-8")
     json.dump(all_tasks, file, indent=4, ensure_ascii=False)
     file.close()
     return all_tasks
@@ -182,7 +194,6 @@ async def date_add_task(update, context):
         for i in range((max(all_ids) if all_ids != [] else 0) + 2):
             if i not in all_ids:
                 new_task["id"] = i
-                print(i)
                 break
 
         file = open(f"users_data/tasks/{update.effective_user.id}_tasks.json", "w+", encoding="utf-8")
@@ -196,6 +207,8 @@ async def date_add_task(update, context):
 🏷️ <b>Название:</b> {new_task["name"]}
 📝 <b>Описания нет</b>
 ⏰ <b>Дедлайн:</b> {new_task["date"]}
+
+У задания есть напоминания за 1 час и за 15 минут(их можно отключить в настройках или а списке задач).
 """, parse_mode=ParseMode.HTML)
         else:
             await update.message.reply_text(f"""
@@ -205,7 +218,47 @@ async def date_add_task(update, context):
 📝 <b>Описание:</b>
 {new_task["description"]}
 ⏰ <b>Дедлайн:</b> {new_task["date"]}
+
+У задания есть напоминания за 1 час и за 15 минут(их можно отключить в настройках или а списке задач).
 """, parse_mode=ParseMode.HTML)
+
+        await set_reminder_task(
+            context=context,
+            chat_id=update.effective_chat.id,
+            user_id=update.effective_user.id,
+            task_id=new_task["id"],
+            time=str_to_date(new_task["date"]),
+            delta_time=timedelta(
+                days=0,
+                hours=0,
+                minutes=15
+            ),
+        )
+        await set_reminder_task(
+            context=context,
+            chat_id=update.effective_chat.id,
+            user_id=update.effective_user.id,
+            task_id=new_task["id"],
+            time=str_to_date(new_task["date"]),
+            delta_time=timedelta(
+                days=0,
+                hours=1,
+                minutes=0
+            ),
+        )
+
+        await set_reminder_task(
+            context=context,
+            chat_id=update.effective_chat.id,
+            user_id=update.effective_user.id,
+            task_id=new_task["id"],
+            time=str_to_date(new_task["date"]),
+            delta_time=timedelta(
+                days=0,
+                hours=0,
+                minutes=0
+            ),
+        )
 
         await create_main_menu(update, context)
         return ConversationHandler.END
@@ -248,7 +301,7 @@ async def choice_type_my_tasks(update, context):
 
     for task in json.load(file):
         if task["status"] == query.data:
-            keyboards.append([InlineKeyboardButton(task["name"], callback_data=task["id"])]) # !!!!!!!!!!!!!!!!!
+            keyboards.append([InlineKeyboardButton(task["name"], callback_data=task["id"])])
 
     keyboards.append([InlineKeyboardButton("🔙 Назад", callback_data="beck_main_menu_my_tasks")])
 
@@ -280,6 +333,20 @@ async def choice_task_my_tasks(update, context):
     if query.data == "beck_main_menu_my_tasks":
         await main_menu(update, context)
         return ConversationHandler.END
+    elif query.data.split("|", 1)[0] == "reminder_off":
+        jobs = context.job_queue.get_jobs_by_name(f"{update.effective_user.id}.{query.data.split("|", 1)[1]}")
+        if not jobs:
+            await update.callback_query.edit_message_text(f"""
+🔇 Уведомления уже были отключены!
+""", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Назад", callback_data="beck_main_menu_my_tasks")]]))
+        else:
+            for job in jobs:
+                job.schedule_removal()
+
+            await update.callback_query.edit_message_text(f"""
+🔇 Уведомления отключены!
+""", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Назад", callback_data="beck_main_menu_my_tasks")]]))
+
     elif query.data.split("|", 1)[0] == "delete_task":
         file = open(f"users_data/tasks/{update.effective_user.id}_tasks.json", "r", encoding="utf-8")
         tasks = json.load(file)
@@ -313,8 +380,6 @@ async def choice_task_my_tasks(update, context):
 {task["description"]}
 ⏰ <b>Дедлайн:</b> {task["date"]}
 """, parse_mode=ParseMode.HTML, reply_markup=markups["back_main_menu_my_tasks"])
-
-
     elif query.data.split("|", 1)[0] == "complete_task":
         file = open(f"users_data/tasks/{update.effective_user.id}_tasks.json", "r", encoding="utf-8")
         tasks = json.load(file)
@@ -369,12 +434,14 @@ async def choice_task_my_tasks(update, context):
         if task["status"] == "complete":
             markup = InlineKeyboardMarkup([
                 [InlineKeyboardButton("❌ Удалить задачу", callback_data=f"delete_task|{task['id']}")],
+                [InlineKeyboardButton("🔇 Отключить уведомления", callback_data=f"reminder_off|{task['id']}")],
                 [InlineKeyboardButton("🔙 Назад", callback_data="beck_main_menu_my_tasks")]
             ])
         else:
             markup = InlineKeyboardMarkup([
                 [InlineKeyboardButton("✔️ Отметить выполненной", callback_data=f"complete_task|{task['id']}")],
                 [InlineKeyboardButton("❌ Удалить задачу", callback_data=f"delete_task|{task['id']}")],
+                [InlineKeyboardButton("🔇 Отключить уведомления", callback_data=f"reminder_off|{task['id']}")],
                 [InlineKeyboardButton("🔙 Назад", callback_data="beck_main_menu_my_tasks")]
             ])
 
@@ -400,6 +467,61 @@ async def beck_main_menu_my_tasks(update, context):
     await main_menu(update, context)
     return ConversationHandler.END
 
+
+async def send_reminder(context):
+    task = task_from_file(context.job.data["user_id"], context.job.data["task_id"])
+    if task["status"] != "complete":
+        if context.job.data["status"] == "active":
+            if context.job.data["time"].total_seconds() == 0:
+                await context.bot.send_message(chat_id=context.job.chat_id, text=f'''
+<b>⏰ Дедлайн на задачу \"{task["name"]}\" вышел!</b>
+
+С этого момента она считается просроченной.
+Вы можете отметить её выполненной или удалить, иначе вы будете получать уведомления о просроченном задании.
+''', parse_mode=ParseMode.HTML)
+            else:
+                await context.bot.send_message(chat_id=context.job.chat_id, text=f'''
+<b>⏰ До дедлайна осталось {context.job.data["time"].days} дней, {context.job.data["time"].seconds // 3600} час(ов), {context.job.data["time"].seconds // 60 % 60} минут(ы)!</b>
+
+Если задача уже выполнена, её можно отметить выполненной.
+''', parse_mode=ParseMode.HTML)
+        elif context.job.data["status"] == "overdue":
+            await context.bot.send_message(chat_id=context.job.chat_id, text=f"Это просроченное задание {task["name"]}")
+
+async def set_reminder_task(context, chat_id, user_id, task_id, time, delta_time):
+    if task_from_file(user_id, task_id)["status"] == "complete":
+        return 0
+
+    when_time = int(((time - delta_time) - datetime.now()).total_seconds())
+
+    if when_time >= 0:
+        context.job_queue.run_once(
+            callback=send_reminder,
+            name=f"{user_id}.{task_id}",
+            chat_id=chat_id,
+            when=when_time,
+            data={
+                "task_id": task_id,
+                "user_id": user_id,
+                "time": delta_time,
+                "status": "active",
+            },
+    )
+
+    '''
+    else:
+        context.job_queue.run_once(
+            callback=send_reminder,
+            name=f"{user_id}.{task_id}",
+            chat_id=chat_id,
+            when=when_time,
+            data={
+                "task_id": task_id,
+                "user_id": user_id,
+                "time": -delta_time,
+                "status": "overdue",
+            },
+        )'''
 
 
 conv_add_task_handler = ConversationHandler(
@@ -429,6 +551,7 @@ application = Application.builder().token(BOT_TOKEN).build()
 
 application.add_handler(CommandHandler('start', start))
 application.add_handler(CommandHandler('help', help))
+application.add_handler(CommandHandler('set', set_reminder_task))
 
 application.add_handler(conv_add_task_handler)
 application.add_handler(conv_my_tasks_handler)
