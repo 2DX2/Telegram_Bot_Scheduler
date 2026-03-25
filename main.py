@@ -196,6 +196,8 @@ async def date_add_task(update, context):
                 new_task["id"] = i
                 break
 
+        new_task["notification"] = True
+
         file = open(f"users_data/tasks/{update.effective_user.id}_tasks.json", "w+", encoding="utf-8")
         json.dump(all_tasks + [new_task], file, indent=4, ensure_ascii=False)
         file.close()
@@ -224,40 +226,16 @@ async def date_add_task(update, context):
 
         await set_reminder_task(
             context=context,
-            chat_id=update.effective_chat.id,
-            user_id=update.effective_user.id,
+            update=update,
             task_id=new_task["id"],
-            time=str_to_date(new_task["date"]),
-            delta_time=timedelta(
-                days=0,
-                hours=0,
-                minutes=15
-            ),
-        )
-        await set_reminder_task(
-            context=context,
-            chat_id=update.effective_chat.id,
-            user_id=update.effective_user.id,
-            task_id=new_task["id"],
-            time=str_to_date(new_task["date"]),
-            delta_time=timedelta(
-                days=0,
-                hours=1,
-                minutes=0
-            ),
-        )
-
-        await set_reminder_task(
-            context=context,
-            chat_id=update.effective_chat.id,
-            user_id=update.effective_user.id,
-            task_id=new_task["id"],
-            time=str_to_date(new_task["date"]),
-            delta_time=timedelta(
-                days=0,
-                hours=0,
-                minutes=0
-            ),
+            delta_times=[
+                timedelta(
+                    seconds=10,
+                ),
+                timedelta(
+                    seconds=20,
+                )
+            ]
         )
 
         await create_main_menu(update, context)
@@ -334,17 +312,62 @@ async def choice_task_my_tasks(update, context):
         await main_menu(update, context)
         return ConversationHandler.END
     elif query.data.split("|", 1)[0] == "reminder_off":
-        jobs = context.job_queue.get_jobs_by_name(f"{update.effective_user.id}.{query.data.split("|", 1)[1]}")
-        if not jobs:
-            await update.callback_query.edit_message_text(f"""
-🔇 Уведомления уже были отключены!
-""", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Назад", callback_data="beck_main_menu_my_tasks")]]))
-        else:
-            for job in jobs:
-                job.schedule_removal()
+        if task_from_file(update.effective_user.id, int(query.data.split("|", 1)[1]))["notification"]:
+            jobs = context.job_queue.get_jobs_by_name(f"{update.effective_user.id}.{query.data.split("|", 1)[1]}")
+
+            if not jobs:
+                pass
+            else:
+                for job in jobs:
+                    job.schedule_removal()
 
             await update.callback_query.edit_message_text(f"""
-🔇 Уведомления отключены!
+    🔇 Уведомления отключены!
+    """, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Назад", callback_data="beck_main_menu_my_tasks")]]))
+
+            file = open(f"users_data/tasks/{update.effective_user.id}_tasks.json", "r", encoding="utf-8")
+            tasks = json.load(file)
+            file.close()
+            for i in range(len(tasks)):
+                if tasks[i]["id"] == int(query.data.split("|", 1)[1]):
+                    task = tasks[i]
+                    number_task = i
+                    break
+
+            file = open(f"users_data/tasks/{update.effective_user.id}_tasks.json", "w", encoding="utf-8")
+            tasks[number_task]["notification"] = False
+            json.dump(tasks, file, indent=4, ensure_ascii=False)
+        else:
+            await set_reminder_task(
+                context=context,
+                update=update,
+                task_id=query.data.split("|", 1)[1],
+                delta_times=[
+                    timedelta(
+                        seconds=10,
+                    ),
+                    timedelta(
+                        seconds=20,
+                    )
+                ]
+            )
+
+            file = open(f"users_data/tasks/{update.effective_user.id}_tasks.json", "r", encoding="utf-8")
+            tasks = json.load(file)
+            file.close()
+            for i in range(len(tasks)):
+                if tasks[i]["id"] == int(query.data.split("|", 1)[1]):
+                    task = tasks[i]
+                    number_task = i
+                    break
+
+
+            file = open(f"users_data/tasks/{update.effective_user.id}_tasks.json", "w", encoding="utf-8")
+            tasks[number_task]["notification"] = True
+            json.dump(tasks, file, indent=4, ensure_ascii=False)
+
+            await update.callback_query.edit_message_text(f"""
+🔊 Уведомления включены!
 """, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Назад", callback_data="beck_main_menu_my_tasks")]]))
 
     elif query.data.split("|", 1)[0] == "delete_task":
@@ -430,18 +453,23 @@ async def choice_task_my_tasks(update, context):
         elif task["status"] == "overdue":
             word = "⏰ Ваша просроченная задача"
 
+        if task_from_file(update.effective_user.id, int(task["id"]))["notification"]:
+            reminder_name = "🔇 Отключить уведомления"
+        else:
+            reminder_name = "🔊 Включить уведомления"
+
 
         if task["status"] == "complete":
             markup = InlineKeyboardMarkup([
                 [InlineKeyboardButton("❌ Удалить задачу", callback_data=f"delete_task|{task['id']}")],
-                [InlineKeyboardButton("🔇 Отключить уведомления", callback_data=f"reminder_off|{task['id']}")],
+                [InlineKeyboardButton(reminder_name, callback_data=f"reminder_off|{task['id']}")],
                 [InlineKeyboardButton("🔙 Назад", callback_data="beck_main_menu_my_tasks")]
             ])
         else:
             markup = InlineKeyboardMarkup([
                 [InlineKeyboardButton("✔️ Отметить выполненной", callback_data=f"complete_task|{task['id']}")],
                 [InlineKeyboardButton("❌ Удалить задачу", callback_data=f"delete_task|{task['id']}")],
-                [InlineKeyboardButton("🔇 Отключить уведомления", callback_data=f"reminder_off|{task['id']}")],
+                [InlineKeyboardButton(reminder_name, callback_data=f"reminder_off|{task['id']}")],
                 [InlineKeyboardButton("🔙 Назад", callback_data="beck_main_menu_my_tasks")]
             ])
 
@@ -488,25 +516,33 @@ async def send_reminder(context):
         elif context.job.data["status"] == "overdue":
             await context.bot.send_message(chat_id=context.job.chat_id, text=f"Это просроченное задание {task["name"]}")
 
-async def set_reminder_task(context, chat_id, user_id, task_id, time, delta_time):
+
+async def set_reminder_task(context, update, task_id, delta_times):
+    chat_id = update.effective_chat.id
+    user_id = update.effective_user.id
+    time = str_to_date(task_from_file(user_id, task_id)["date"])
+    now_time = datetime.now()
+
     if task_from_file(user_id, task_id)["status"] == "complete":
         return 0
 
-    when_time = int(((time - delta_time) - datetime.now()).total_seconds())
 
-    if when_time >= 0:
-        context.job_queue.run_once(
-            callback=send_reminder,
-            name=f"{user_id}.{task_id}",
-            chat_id=chat_id,
-            when=when_time,
-            data={
-                "task_id": task_id,
-                "user_id": user_id,
-                "time": delta_time,
-                "status": "active",
-            },
-    )
+    for i in range(len(delta_times)):
+        when_time = int(((time - delta_times[i]) - now_time).total_seconds())
+
+        if when_time >= 0:
+            context.job_queue.run_once(
+                callback=send_reminder,
+                name=f"{user_id}.{task_id}.{i}",
+                chat_id=chat_id,
+                when=when_time,
+                data={
+                    "task_id": task_id,
+                    "user_id": user_id,
+                    "time": delta_times[i],
+                    "status": "active",
+                },
+        )
 
     '''
     else:
@@ -551,7 +587,6 @@ application = Application.builder().token(BOT_TOKEN).build()
 
 application.add_handler(CommandHandler('start', start))
 application.add_handler(CommandHandler('help', help))
-application.add_handler(CommandHandler('set', set_reminder_task))
 
 application.add_handler(conv_add_task_handler)
 application.add_handler(conv_my_tasks_handler)
