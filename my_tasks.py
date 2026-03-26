@@ -85,10 +85,10 @@ async def choice_task_my_tasks(update, context):
                 task_id=query.data.split("|", 1)[1],
                 delta_times=[
                     timedelta(
-                        seconds=10,
+                        minutes=15,
                     ),
                     timedelta(
-                        seconds=20,
+                        hours=1,
                     )
                 ]
             )

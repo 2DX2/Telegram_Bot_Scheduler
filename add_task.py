@@ -100,10 +100,10 @@ async def date_add_task(update, context):
             task_id=new_task["id"],
             delta_times=[
                 timedelta(
-                    seconds=10,
+                    minutes=15,
                 ),
                 timedelta(
-                    seconds=20,
+                    hours=1,
                 )
             ]
         )
