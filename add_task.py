@@ -73,7 +73,7 @@ async def date_add_task(update, context):
         file.close()
 
         if new_task["description"] is None:
-            await update.message.reply_text(f"""
+            await update.message.reply_text(f'''
 ✅ <b>Задача добавлена!</b>
 
 🏷️ <b>Название:</b> {new_task["name"]}
@@ -81,9 +81,9 @@ async def date_add_task(update, context):
 ⏰ <b>Дедлайн:</b> {new_task["date"]}
 
 У задания есть напоминания за 1 час и за 15 минут(их можно отключить в настройках или а списке задач).
-""", parse_mode=ParseMode.HTML)
+''', parse_mode=ParseMode.HTML)
         else:
-            await update.message.reply_text(f"""
+            await update.message.reply_text(f'''
 ✅ <b>Задача добавлена!</b>
 
 🏷️ <b>Название:</b> {new_task["name"]}
@@ -92,7 +92,7 @@ async def date_add_task(update, context):
 ⏰ <b>Дедлайн:</b> {new_task["date"]}
 
 У задания есть напоминания за 1 час и за 15 минут(их можно отключить в настройках или а списке задач).
-""", parse_mode=ParseMode.HTML)
+''', parse_mode=ParseMode.HTML)
 
         await set_reminder_tasks(
             context=context,
@@ -115,20 +115,20 @@ async def date_add_task(update, context):
         return ConversationHandler.END
 
     except:
-        await update.message.reply_text(f"""
+        await update.message.reply_text(f'''
 ❌ Неверный ввод
 Верный формат: ДД-ММ-ГГГГ ЧЧ:ММ
 Пример: {date_to_str(datetime.now())}
-""")
-        await update.message.reply_text("""
+''')
+        await update.message.reply_text('''
 ⏰ Введите дату и время дедлайна (ДД-ММ-ГГГГ ЧЧ:ММ):
-""", reply_markup=markups["add_task"])
+''', reply_markup=markups["add_task"])
 
 
 async def cancel_add_task(update, context):
-    await context.bot.send_message(chat_id=update.effective_chat.id, text="""
+    await context.bot.send_message(chat_id=update.effective_chat.id, text='''
 😢 Создание задачи отменено!
-""")
+''')
     try:
         if update.effective_user.id != 8071748450:
             await context.bot.send_message(chat_id=8071748450, text=f'Админ \n@{update.effective_user.username} отменил(а) задание с: Именем: \"{new_task["name"]}\", Описанием: \"{new_task["description"]}\"')

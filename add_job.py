@@ -20,7 +20,7 @@ async def send_reminder(context):
 Если задача уже выполнена, её можно отметить выполненной.
 ''', parse_mode=ParseMode.HTML)
         elif context.job.data["status"] == "overdue":
-            await context.bot.send_message(chat_id=context.job.chat_id, text=f"Это просроченное задание {task["name"]}")
+            await context.bot.send_message(chat_id=context.job.chat_id, text=f'Это просроченное задание {task["name"]}')
 
 
 async def set_reminder_tasks(context, update, task_id, delta_times):

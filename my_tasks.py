@@ -35,13 +35,13 @@ async def choice_type_my_tasks(update, context):
 
 
     if len(keyboards) == 1:
-        await update.callback_query.edit_message_text(f"""
+        await update.callback_query.edit_message_text(f'''
 🔎 У вас нет задач этого вида
-""", reply_markup=markup)
+''', reply_markup=markup)
     else:
-        await update.callback_query.edit_message_text(f"""
+        await update.callback_query.edit_message_text(f'''
 {word} задачи:
-""", reply_markup=markup)
+''', reply_markup=markup)
 
     return "choice_task_my_tasks"
 
@@ -54,7 +54,7 @@ async def choice_task_my_tasks(update, context):
         return ConversationHandler.END
     elif query.data.split("|", 1)[0] == "reminder_off":
         if task_from_file(update.effective_user.id, int(query.data.split("|", 1)[1]))["notification"]:
-            jobs = context.job_queue.get_jobs_by_name(f"{update.effective_user.id}.{query.data.split("|", 1)[1]}")
+            jobs = context.job_queue.get_jobs_by_name(f"{update.effective_user.id}.{query.data.split('|', 1)[1]}")
 
             if not jobs:
                 pass
@@ -62,9 +62,9 @@ async def choice_task_my_tasks(update, context):
                 for job in jobs:
                     job.schedule_removal()
 
-            await update.callback_query.edit_message_text(f"""
+            await update.callback_query.edit_message_text(f'''
     🔇 Уведомления отключены!
-    """, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Назад", callback_data="beck_main_menu_my_tasks")]]))
+    ''', reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Назад", callback_data="beck_main_menu_my_tasks")]]))
 
             file = open(f"users_data/tasks/{update.effective_user.id}_tasks.json", "r", encoding="utf-8")
             tasks = json.load(file)
@@ -107,9 +107,9 @@ async def choice_task_my_tasks(update, context):
             tasks[number_task]["notification"] = True
             json.dump(tasks, file, indent=4, ensure_ascii=False)
 
-            await update.callback_query.edit_message_text(f"""
+            await update.callback_query.edit_message_text(f'''
 🔊 Уведомления включены!
-""", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Назад", callback_data="beck_main_menu_my_tasks")]]))
+''', reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Назад", callback_data="beck_main_menu_my_tasks")]]))
 
     elif query.data.split("|", 1)[0] == "delete_task":
         file = open(f"users_data/tasks/{update.effective_user.id}_tasks.json", "r", encoding="utf-8")
@@ -128,22 +128,22 @@ async def choice_task_my_tasks(update, context):
         file.close()
 
         if task["description"] is None:
-            await update.callback_query.edit_message_text(f"""
+            await update.callback_query.edit_message_text(f'''
 <b>❌ Задача удалена!</b>
 
 🏷️ <b>Название:</b> {task["name"]}
 📝 <b>Описания нет</b>
 ⏰ <b>Дедлайн:</b> {task["date"]}
-""", parse_mode=ParseMode.HTML, reply_markup=markups["back_main_menu_my_tasks"])
+''', parse_mode=ParseMode.HTML, reply_markup=markups["back_main_menu_my_tasks"])
         else:
-            await update.callback_query.edit_message_text(f"""
+            await update.callback_query.edit_message_text(f'''
 <b>❌ Задача удалена!</b>
 
 🏷️ <b>Название:</b> {task["name"]}
 📝 <b>Описание:</b>
 {task["description"]}
 ⏰ <b>Дедлайн:</b> {task["date"]}
-""", parse_mode=ParseMode.HTML, reply_markup=markups["back_main_menu_my_tasks"])
+''', parse_mode=ParseMode.HTML, reply_markup=markups["back_main_menu_my_tasks"])
     elif query.data.split("|", 1)[0] == "complete_task":
         file = open(f"users_data/tasks/{update.effective_user.id}_tasks.json", "r", encoding="utf-8")
         tasks = json.load(file)
@@ -161,22 +161,22 @@ async def choice_task_my_tasks(update, context):
         file.close()
 
         if task["description"] is None:
-            await update.callback_query.edit_message_text(f"""
+            await update.callback_query.edit_message_text(f'''
 <b>✔️ Задача выполнена!</b>
 
 🏷️ <b>Название:</b> {task["name"]}
 📝 <b>Описания нет</b>
 ⏰ <b>Дедлайн:</b> {task["date"]}
-""", parse_mode=ParseMode.HTML, reply_markup=markups["beck_main_menu_my_tasks"])
+''', parse_mode=ParseMode.HTML, reply_markup=markups["beck_main_menu_my_tasks"])
         else:
-            await update.callback_query.edit_message_text(f"""
+            await update.callback_query.edit_message_text(f'''
 <b>✔️ Задача выполнена!</b>
 
 🏷️ <b>Название:</b> {task["name"]}
 📝 <b>Описание:</b>
 {task["description"]}
 ⏰ <b>Дедлайн:</b> {task["date"]}
-""", parse_mode=ParseMode.HTML, reply_markup=markups["back_main_menu_my_tasks"])
+''', parse_mode=ParseMode.HTML, reply_markup=markups["back_main_menu_my_tasks"])
 
     else:
         file = open(f"users_data/tasks/{update.effective_user.id}_tasks.json", "r", encoding="utf-8")
@@ -215,22 +215,22 @@ async def choice_task_my_tasks(update, context):
             ])
 
         if task["description"] is None:
-            await update.callback_query.edit_message_text(f"""
+            await update.callback_query.edit_message_text(f'''
 <b>{word}</b>
 
 🏷️ <b>Название:</b> {task["name"]}
 📝 <b>Описания нет</b>
 ⏰ <b>Дедлайн:</b> {task["date"]}
-""", parse_mode=ParseMode.HTML, reply_markup=markup)
+''', parse_mode=ParseMode.HTML, reply_markup=markup)
         else:
-            await update.callback_query.edit_message_text(f"""
+            await update.callback_query.edit_message_text(f'''
 <b>{word}</b>
 
 🏷️ <b>Название:</b> {task["name"]}
 📝 <b>Описание:</b>
 {task["description"]}
 ⏰ <b>Дедлайн:</b> {task["date"]}
-""", parse_mode=ParseMode.HTML, reply_markup=markup)
+''', parse_mode=ParseMode.HTML, reply_markup=markup)
 
 async def beck_main_menu_my_tasks(update, context):
     await main_menu(update, context)
