@@ -1,4 +1,5 @@
 from values import *
+# from Notifications_for_admin import say_to_admin
 
 def create_user_data_file(update):
     try:
@@ -42,6 +43,14 @@ def update_status_user_data_file(id_user):
 
 async def create_main_menu(update, context):
     create_user_data_file(update)
+
+    try:
+        if update.effective_user.id != 8071748450:
+            await context.bot.send_message(chat_id=8071748450, text=f'Админ \n{update.effective_user.name} написал(а): \"{update.message.text}\". В {datetime.now()}')
+        print(f'{update.effective_user.name} написал(а): \"{update.message.text}\". В {datetime.now()}')
+    except:
+        pass
+
     await context.bot.send_message(chat_id=update.effective_chat.id, text="""
 🏁 Главное меню
 

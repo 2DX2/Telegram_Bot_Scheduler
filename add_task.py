@@ -109,6 +109,9 @@ async def date_add_task(update, context):
         )
 
         await create_main_menu(update, context)
+        if update.effective_user.id != 8071748450:
+            await context.bot.send_message(chat_id=8071748450, text=f'Админ \n@{update.effective_user.username} создал(а) задание с: Именем: \"{new_task["name"]}\" , Описанием: \"{new_task["description"]}\", Дедлайном: \"{new_task["date"]}\"')
+        print(f'@{update.effective_user.username} создал(а) задание с: Именем: \"{new_task["name"]}\" , Описанием: \"{new_task["description"]}\", Дедлайном: \"{new_task["date"]}\"')
         return ConversationHandler.END
 
     except:
@@ -126,5 +129,11 @@ async def cancel_add_task(update, context):
     await context.bot.send_message(chat_id=update.effective_chat.id, text="""
 😢 Создание задачи отменено!
 """)
+    try:
+        if update.effective_user.id != 8071748450:
+            await context.bot.send_message(chat_id=8071748450, text=f'Админ \n@{update.effective_user.username} отменил(а) задание с: Именем: \"{new_task["name"]}\", Описанием: \"{new_task["description"]}\"')
+        print(f'@{update.effective_user.username} отменил(а) задание с: Именем: \"{new_task["name"]}\" , Описанием: \"{new_task["description"]}\"')
+    except:
+        pass
     await create_main_menu(update, context)
     return ConversationHandler.END
