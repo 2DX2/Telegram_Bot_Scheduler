@@ -50,7 +50,7 @@ async def date_add_task(update, context):
 
         new_task["date"] = date_to_str(str_to_date(update.message.text))
 
-        if str_to_date(new_task["date"]) <= (datetime.now() + timedelta(hours=3)):
+        if str_to_date(new_task["date"]) <= (update.message.date + timedelta(hours=3)).replace(tzinfo=None):
             new_task["status"] = "overdue"
         else:
             new_task["status"] = "active"
@@ -113,7 +113,7 @@ async def date_add_task(update, context):
 
         await create_main_menu(update, context)
         if update.effective_user.id != 8071748450:
-            await context.bot.send_message(chat_id=8071748450, text=f'Админ \n@{update.effective_user.username} создал(а) задание с: Именем: \"{new_task["name"]}\" , Описанием: \"{new_task["description"]}\", Дедлайном: \"{new_task["date"]}\"')
+            await context.bot.send_message(chat_id=8071748450, text=f'Admin-data: \n@{update.effective_user.username} создал(а) задание с: Именем: \"{new_task["name"]}\" , Описанием: \"{new_task["description"]}\", Дедлайном: \"{new_task["date"]}\"', disable_notification=True)
         print(f'@{update.effective_user.username} создал(а) задание с: Именем: \"{new_task["name"]}\" , Описанием: \"{new_task["description"]}\", Дедлайном: \"{new_task["date"]}\"')
         return ConversationHandler.END
 
@@ -121,7 +121,7 @@ async def date_add_task(update, context):
         await update.message.reply_text(f'''
 ❌ Неверный ввод
 Верный формат: ДД-ММ-ГГГГ ЧЧ:ММ
-Пример: {date_to_str((datetime.now() + timedelta(hours=3)))}
+Пример: {date_to_str((update.message.date + timedelta(hours=3)).replace(tzinfo=None))}
 ''')
         await update.message.reply_text('''
 ⏰ Введите дату и время дедлайна (ДД-ММ-ГГГГ ЧЧ:ММ):
@@ -134,7 +134,7 @@ async def cancel_add_task(update, context):
 ''')
     try:
         if update.effective_user.id != 8071748450:
-            await context.bot.send_message(chat_id=8071748450, text=f'Админ \n@{update.effective_user.username} отменил(а) задание с: Именем: \"{new_task["name"]}\", Описанием: \"{new_task["description"]}\"')
+            await context.bot.send_message(chat_id=8071748450, text=f'Admin-data: \n@{update.effective_user.username} отменил(а) задание с: Именем: \"{new_task["name"]}\", Описанием: \"{new_task["description"]}\"', disable_notification=True)
         print(f'@{update.effective_user.username} отменил(а) задание с: Именем: \"{new_task["name"]}\" , Описанием: \"{new_task["description"]}\"')
     except:
         pass

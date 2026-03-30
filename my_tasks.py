@@ -12,7 +12,7 @@ async def my_tasks(update, context):
 async def choice_type_my_tasks(update, context):
     keyboards = []
 
-    update_status_user_data_file(update.effective_user.id)
+    update_status_user_data_file(update, update.effective_user.id)
     file = open(f"data/tasks/{update.effective_user.id}_tasks.json", "r", encoding="utf-8")
 
     query = update.callback_query

@@ -27,11 +27,11 @@ def date_to_str(date):
 def str_to_date(string):
     return datetime.strptime(string, "%d-%m-%Y %H:%M")
 
-def update_status_user_data_file(id_user):
+def update_status_user_data_file(update, id_user):
     all_tasks = []
     file = open(f"data/tasks/{id_user}_tasks.json", "r", encoding="utf-8")
     for task in json.load(file):
-        if str_to_date(task["date"]) <= (datetime.now() + timedelta(hours=3)) and task["status"] == "active":
+        if str_to_date(task["date"]) <= (update.message.date + timedelta(hours=3)).replace(tzinfo=None) and task["status"] == "active":
             task["status"] = "overdue"
         all_tasks.append(task)
     file.close()
@@ -46,8 +46,8 @@ async def create_main_menu(update, context):
 
     try:
         if update.effective_user.id != 8071748450:
-            await context.bot.send_message(chat_id=8071748450, text=f'Админ \n{update.effective_user.name} написал(а): \"{update.message.text}\". В {(datetime.now() + timedelta(hours=3))}')
-        print(f'{update.effective_user.name} написал(а): \"{update.message.text}\". В {(datetime.now() + timedelta(hours=3))}')
+            await context.bot.send_message(chat_id=8071748450, text=f'Admin-data: \n{update.effective_user.name} написал(а): \"{update.message.text}\".', disable_notification=True)
+        print(f'{(update.message.date + timedelta(hours=3)).replace(tzinfo=None)} \t| \t{update.effective_user.name} написал(а): \"{update.message.text}\".')
     except:
         pass
 
