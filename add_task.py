@@ -55,7 +55,7 @@ async def date_add_task(update, context):
         else:
             new_task["status"] = "active"
 
-        file = open(f"users_data/tasks/{update.effective_user.id}_tasks.json", "r", encoding="utf-8")
+        file = open(f"data/tasks/{update.effective_user.id}_tasks.json", "r", encoding="utf-8")
         all_tasks = json.load(file)
         file.close()
 
@@ -68,7 +68,7 @@ async def date_add_task(update, context):
 
         new_task["notification"] = True
 
-        file = open(f"users_data/tasks/{update.effective_user.id}_tasks.json", "w+", encoding="utf-8")
+        file = open(f"data/tasks/{update.effective_user.id}_tasks.json", "w+", encoding="utf-8")
         json.dump(all_tasks + [new_task], file, indent=4, ensure_ascii=False)
         file.close()
 

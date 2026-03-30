@@ -13,7 +13,7 @@ async def choice_type_my_tasks(update, context):
     keyboards = []
 
     update_status_user_data_file(update.effective_user.id)
-    file = open(f"users_data/tasks/{update.effective_user.id}_tasks.json", "r", encoding="utf-8")
+    file = open(f"data/tasks/{update.effective_user.id}_tasks.json", "r", encoding="utf-8")
 
     query = update.callback_query
     await query.answer()
@@ -66,7 +66,7 @@ async def choice_task_my_tasks(update, context):
     🔇 Уведомления отключены!
     ''', reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Назад", callback_data="beck_main_menu_my_tasks")]]))
 
-            file = open(f"users_data/tasks/{update.effective_user.id}_tasks.json", "r", encoding="utf-8")
+            file = open(f"data/tasks/{update.effective_user.id}_tasks.json", "r", encoding="utf-8")
             tasks = json.load(file)
             file.close()
             for i in range(len(tasks)):
@@ -75,7 +75,7 @@ async def choice_task_my_tasks(update, context):
                     number_task = i
                     break
 
-            file = open(f"users_data/tasks/{update.effective_user.id}_tasks.json", "w", encoding="utf-8")
+            file = open(f"data/tasks/{update.effective_user.id}_tasks.json", "w", encoding="utf-8")
             tasks[number_task]["notification"] = False
             json.dump(tasks, file, indent=4, ensure_ascii=False)
         else:
@@ -93,7 +93,7 @@ async def choice_task_my_tasks(update, context):
                 ]
             )
 
-            file = open(f"users_data/tasks/{update.effective_user.id}_tasks.json", "r", encoding="utf-8")
+            file = open(f"data/tasks/{update.effective_user.id}_tasks.json", "r", encoding="utf-8")
             tasks = json.load(file)
             file.close()
             for i in range(len(tasks)):
@@ -103,7 +103,7 @@ async def choice_task_my_tasks(update, context):
                     break
 
 
-            file = open(f"users_data/tasks/{update.effective_user.id}_tasks.json", "w", encoding="utf-8")
+            file = open(f"data/tasks/{update.effective_user.id}_tasks.json", "w", encoding="utf-8")
             tasks[number_task]["notification"] = True
             json.dump(tasks, file, indent=4, ensure_ascii=False)
 
@@ -112,7 +112,7 @@ async def choice_task_my_tasks(update, context):
 ''', reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Назад", callback_data="beck_main_menu_my_tasks")]]))
 
     elif query.data.split("|", 1)[0] == "delete_task":
-        file = open(f"users_data/tasks/{update.effective_user.id}_tasks.json", "r", encoding="utf-8")
+        file = open(f"data/tasks/{update.effective_user.id}_tasks.json", "r", encoding="utf-8")
         tasks = json.load(file)
         file.close()
         for i in range(len(tasks)):
@@ -123,7 +123,7 @@ async def choice_task_my_tasks(update, context):
 
         del tasks[number_task]
 
-        file = open(f"users_data/tasks/{update.effective_user.id}_tasks.json", "w", encoding="utf-8")
+        file = open(f"data/tasks/{update.effective_user.id}_tasks.json", "w", encoding="utf-8")
         json.dump(tasks, file, indent=4, ensure_ascii=False)
         file.close()
 
@@ -145,7 +145,7 @@ async def choice_task_my_tasks(update, context):
 ⏰ <b>Дедлайн:</b> {task["date"]}
 ''', parse_mode=ParseMode.HTML, reply_markup=markups["back_main_menu_my_tasks"])
     elif query.data.split("|", 1)[0] == "complete_task":
-        file = open(f"users_data/tasks/{update.effective_user.id}_tasks.json", "r", encoding="utf-8")
+        file = open(f"data/tasks/{update.effective_user.id}_tasks.json", "r", encoding="utf-8")
         tasks = json.load(file)
         file.close()
         for i in range(len(tasks)):
@@ -156,7 +156,7 @@ async def choice_task_my_tasks(update, context):
 
         tasks[number_task]["status"] = "complete"
 
-        file = open(f"users_data/tasks/{update.effective_user.id}_tasks.json", "w", encoding="utf-8")
+        file = open(f"data/tasks/{update.effective_user.id}_tasks.json", "w", encoding="utf-8")
         json.dump(tasks, file, indent=4, ensure_ascii=False)
         file.close()
 
@@ -179,7 +179,7 @@ async def choice_task_my_tasks(update, context):
 ''', parse_mode=ParseMode.HTML, reply_markup=markups["back_main_menu_my_tasks"])
 
     else:
-        file = open(f"users_data/tasks/{update.effective_user.id}_tasks.json", "r", encoding="utf-8")
+        file = open(f"data/tasks/{update.effective_user.id}_tasks.json", "r", encoding="utf-8")
         tasks = json.load(file)
         file.close()
         for i in tasks:

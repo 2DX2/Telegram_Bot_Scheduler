@@ -9,7 +9,7 @@ from add_job import *
 def main():
     filterwarnings(action="ignore", message=r".*CallbackQueryHandler") # убирает предупреждение
 
-    os.makedirs("users_data/tasks", exist_ok=True)
+    os.makedirs("data/tasks", exist_ok=True)
 
 
 

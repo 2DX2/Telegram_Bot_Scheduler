@@ -3,15 +3,15 @@ from values import *
 
 def create_user_data_file(update):
     try:
-        file = open(f"users_data/tasks/{update.effective_user.id}_tasks.json", "r", encoding="utf-8")
+        file = open(f"data/tasks/{update.effective_user.id}_tasks.json", "r", encoding="utf-8")
         file.close()
     except FileNotFoundError:
-        file = open(f"users_data/tasks/{update.effective_user.id}_tasks.json", "w+", encoding="utf-8")
+        file = open(f"data/tasks/{update.effective_user.id}_tasks.json", "w+", encoding="utf-8")
         json.dump([], file, indent=4, ensure_ascii=False)
         file.close()
 
 def task_from_file(user_id, task_id):
-    file = open(f"users_data/tasks/{user_id}_tasks.json", "r", encoding="utf-8")
+    file = open(f"data/tasks/{user_id}_tasks.json", "r", encoding="utf-8")
     data = json.load(file)
     file.close()
     this_task = None
@@ -29,13 +29,13 @@ def str_to_date(string):
 
 def update_status_user_data_file(id_user):
     all_tasks = []
-    file = open(f"users_data/tasks/{id_user}_tasks.json", "r", encoding="utf-8")
+    file = open(f"data/tasks/{id_user}_tasks.json", "r", encoding="utf-8")
     for task in json.load(file):
         if str_to_date(task["date"]) <= (datetime.now() + timedelta(hours=3)) and task["status"] == "active":
             task["status"] = "overdue"
         all_tasks.append(task)
     file.close()
-    file = open(f"users_data/tasks/{id_user}_tasks.json", "w+", encoding="utf-8")
+    file = open(f"data/tasks/{id_user}_tasks.json", "w+", encoding="utf-8")
     json.dump(all_tasks, file, indent=4, ensure_ascii=False)
     file.close()
     return all_tasks
