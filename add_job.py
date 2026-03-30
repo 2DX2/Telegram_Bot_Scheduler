@@ -27,7 +27,7 @@ async def set_reminder_tasks(context, update, task_id, delta_times):
     chat_id = update.effective_chat.id
     user_id = update.effective_user.id
     time = str_to_date(task_from_file(user_id, task_id)["date"])
-    now_time = datetime.now()
+    now_time = (datetime.now() + timedelta(hours=3))
 
     if task_from_file(user_id, task_id)["status"] == "complete":
         return 0

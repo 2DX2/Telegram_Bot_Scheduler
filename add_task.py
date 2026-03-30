@@ -50,7 +50,7 @@ async def date_add_task(update, context):
 
         new_task["date"] = date_to_str(str_to_date(update.message.text))
 
-        if str_to_date(new_task["date"]) <= datetime.now():
+        if str_to_date(new_task["date"]) <= (datetime.now() + timedelta(hours=3)):
             new_task["status"] = "overdue"
         else:
             new_task["status"] = "active"
@@ -121,7 +121,7 @@ async def date_add_task(update, context):
         await update.message.reply_text(f'''
 ❌ Неверный ввод
 Верный формат: ДД-ММ-ГГГГ ЧЧ:ММ
-Пример: {date_to_str(datetime.now())}
+Пример: {date_to_str((datetime.now() + timedelta(hours=3)))}
 ''')
         await update.message.reply_text('''
 ⏰ Введите дату и время дедлайна (ДД-ММ-ГГГГ ЧЧ:ММ):
