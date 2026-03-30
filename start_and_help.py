@@ -2,7 +2,8 @@ from basic_functions import *
 
 async def start(update, context):
     create_user_data_file(update)
-    await update.message.reply_text("""
+    await update.message.reply_text(f"""
+{update.message.date + timedelta(hours=3)}
 👋 Добро пожаловать в Планировщик задач!
 
 Я помогу вам организовать время: создавать задачи, устанавливать дедлайны и получать напоминания.
