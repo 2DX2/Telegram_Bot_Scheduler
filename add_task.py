@@ -104,6 +104,9 @@ async def date_add_task(update, context):
                 ),
                 timedelta(
                     hours=1,
+                ),
+                timedelta(
+                    hours=0,
                 )
             ]
         )
